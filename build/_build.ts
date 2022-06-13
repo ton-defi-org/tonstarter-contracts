@@ -33,7 +33,6 @@ async function main() {
       .match(/semantic version: v([0-9.]+)/)?.[1];
     if (!semver.gte(semver.coerce(funcVersion) ?? "", minSupportFunc)) throw new Error("Nonexistent version or outdated");
   } catch (e) {
-    console.log(e);
     console.log(
       `\nFATAL ERROR: 'func' with version >= ${minSupportFunc} executable is not found, is it installed and in path?`
     );
