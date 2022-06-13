@@ -17,6 +17,7 @@
     "@types/bn.js": "^5.1.0",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.0.0",
+    "@types/semver": "^7.3.9",
     "axios-request-throttle": "^1.0.0",
     "chai": "^4.3.4",
     "chai-bn": "^0.3.1",
@@ -43,5 +44,8 @@
   },
   "engines": {
     "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "semver": "^7.3.7"
   }
 }

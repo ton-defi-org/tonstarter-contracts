@@ -2,6 +2,12 @@
 
 ;; storage binary format is defined as TL-B in companion .tlb file
 
+#pragma version >=0.2.0;
+
+#include "imports/stdlib.fc";
+#include "imports/constants.fc";
+#include "imports/utils.fc";
+
 (slice, int) load_data() inline {
   var ds = get_data().begin_parse();
   return (
