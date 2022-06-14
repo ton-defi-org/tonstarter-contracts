@@ -16,7 +16,7 @@ try {
 } catch (e) {}
 
 if (process.env.GITHUB_ACTIONS) {
-  child_process.execSync('sudo apt install libssl-dev');
+  child_process.execSync('sudo apt install libssl-dev -y');
 }
 
 // check if we're running on glitch.com (glitch is running Ubuntu 16)
