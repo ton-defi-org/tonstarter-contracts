@@ -8,7 +8,7 @@ import { SmartContract } from "ton-contract-executor";
 import * as main from "../contracts/main";
 import { internalMessage, randomAddress } from "./helpers";
 
-import { hex } from "../build/main-bitcode.json";
+import { hex } from "../build/main.compiled.json";
 
 describe("Counter tests", () => {
   let contract: SmartContract;
