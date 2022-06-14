@@ -15,10 +15,6 @@ try {
   fs.unlinkSync(__dirname + "/../node_modules/.bin/fift.cmd");
 } catch (e) {}
 
-if (process.env.GITHUB_ACTIONS) {
-  child_process.execSync('sudo apt install libssl-dev -y');
-}
-
 // check if we're running on glitch.com (glitch is running Ubuntu 16)
 if (fs.existsSync("/app/.glitchdotcom.json") || process.env.GITHUB_ACTIONS) {
   // make sure we're installed once
