@@ -25,17 +25,17 @@ async function main() {
   }
 
   // make sure func compiler is available
-  // const minSupportFunc = "0.2.0";
-  // try {
-  //   const funcVersion = child_process
-  //     .execSync("func -V")
-  //     .toString()
-  //     .match(/semantic version: v([0-9.]+)/)?.[1];
-  //   if (!semver.gte(semver.coerce(funcVersion) ?? "", minSupportFunc)) throw new Error("Nonexistent version or outdated");
-  // } catch (e) {
-  //   console.log(`\nFATAL ERROR: 'func' with version >= ${minSupportFunc} executable is not found, is it installed and in path?`);
-  //   process.exit(1);
-  // }
+  const minSupportFunc = "0.2.0";
+  try {
+    const funcVersion = child_process
+      .execSync("func -V")
+      .toString()
+      .match(/semantic version: v([0-9.]+)/)?.[1];
+    if (!semver.gte(semver.coerce(funcVersion) ?? "", minSupportFunc)) throw new Error("Nonexistent version or outdated");
+  } catch (e) {
+    console.log(`\nFATAL ERROR: 'func' with version >= ${minSupportFunc} executable is not found, is it installed and in path?`);
+    process.exit(1);
+  }
 
   // make sure fift cli is available
   let fiftVersion = "";
