@@ -27,7 +27,7 @@ jobs:
           cache: "npm"
       # - run: sudo locate libcrypto.so.1.0.0
       # - run: sudo apt-get install -y libssl-dev
-      - run: mkdir bin && wget https://github.com/ton-defi-org/ton-binaries/releases/download/ubuntu-16/fift -P ./bin && chmod +x ./bin/fift && wget https://github.com/ton-defi-org/ton-binaries/releases/download/ubuntu-16/func -P ./bin && chmod +x ./bin/func && wget https://github.com/ton-defi-org/ton-binaries/releases/download/fiftlib/fiftlib.zip -P ./bin && unzip ./bin/fiftlib.zip -d ./bin/fiftlib
+      - run: mkdir bin && wget https://github.com/ton-defi-org/ton-binaries/releases/download/ubuntu-18/fift -P ./bin && chmod +x ./bin/fift && wget https://github.com/ton-defi-org/ton-binaries/releases/download/ubuntu-18/func -P ./bin && chmod +x ./bin/func && wget https://github.com/ton-defi-org/ton-binaries/releases/download/fiftlib/fiftlib.zip -P ./bin && unzip ./bin/fiftlib.zip -d ./bin/fiftlib
       
 # child_process.execSync(`mkdir bin`);
 #     child_process.execSync(`wget https://github.com/ton-defi-org/ton-binaries/releases/download/ubuntu-16/fift -P ./bin`);
