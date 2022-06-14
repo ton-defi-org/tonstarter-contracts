@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
-      - run: sudo apt-get install -y libssl-dev
+      - run: sudo apt-get install -y libssl-dev libssl1.0.0
       - run: npm ci
       - run: npm run build
       - run: npm test
