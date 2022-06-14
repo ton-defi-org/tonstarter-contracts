@@ -33,9 +33,7 @@ async function main() {
       .match(/semantic version: v([0-9.]+)/)?.[1];
     if (!semver.gte(semver.coerce(funcVersion) ?? "", minSupportFunc)) throw new Error("Nonexistent version or outdated");
   } catch (e) {
-    console.log(
-      `\nFATAL ERROR: 'func' with version >= ${minSupportFunc} executable is not found, is it installed and in path?`
-    );
+    console.log(`\nFATAL ERROR: 'func' with version >= ${minSupportFunc} executable is not found, is it installed and in path?`);
     process.exit(1);
   }
 
@@ -77,7 +75,7 @@ async function main() {
       console.log(` - Deleting old build artifact '${cellArtifact}'`);
       fs.unlinkSync(cellArtifact);
     }
-    const hexArtifact = `build/${contractName}-bitcode.json`;
+    const hexArtifact = `build/${contractName}.compiled.json`;
     if (fs.existsSync(hexArtifact)) {
       console.log(` - Deleting old build artifact '${hexArtifact}'`);
       fs.unlinkSync(hexArtifact);
@@ -93,27 +91,17 @@ async function main() {
         const crc = crc32(tlbOpMessage);
         const asQuery = `0x${(crc & 0x7fffffff).toString(16)}`;
         const asResponse = `0x${((crc | 0x80000000) >>> 0).toString(16)}`;
-        console.log(
-          `   op '${
-            tlbOpMessage.split(" ")[0]
-          }': '${asQuery}' as query (&0x7fffffff), '${asResponse}' as response (|0x80000000)`
-        );
+        console.log(`   op '${tlbOpMessage.split(" ")[0]}': '${asQuery}' as query (&0x7fffffff), '${asResponse}' as response (|0x80000000)`);
       }
     } else {
-      console.log(
-        ` - Warning: TL-B file for contract '${tlbFile}' not found, are your op consts according to standard?`
-      );
+      console.log(` - Warning: TL-B file for contract '${tlbFile}' not found, are your op consts according to standard?`);
     }
 
     // run the func compiler to create a fif file
     console.log(` - Trying to compile '${rootContract}' with 'func' compiler..`);
     let buildErrors: string;
     try {
-      buildErrors = child_process
-        .execSync(
-          `func -APS -o build/${contractName}.fif ${rootContract} 2>&1 1>node_modules/.tmpfunc`
-        )
-        .toString();
+      buildErrors = child_process.execSync(`func -APS -o build/${contractName}.fif ${rootContract} 2>&1 1>node_modules/.tmpfunc`).toString();
     } catch (e) {
       buildErrors = e.stdout.toString();
     }
@@ -134,7 +122,7 @@ async function main() {
     }
 
     // create a temp cell.fif that will generate the cell
-    let fiftCellSource = "\"Asm.fif\" include\n";
+    let fiftCellSource = '"Asm.fif" include\n';
     fiftCellSource += `${fs.readFileSync(fiftArtifact).toString()}\n`;
     fiftCellSource += `boc>B "${cellArtifact}" B>file`;
     fs.writeFileSync(fiftCellArtifact, fiftCellSource);
