@@ -16,7 +16,7 @@ try {
 } catch (e) {}
 
 // check if we're running on glitch.com (glitch is running Ubuntu 16)
-if (fs.existsSync("/app/.glitchdotcom.json") || process.env.GITHUB_ACTIONS) {
+if (fs.existsSync("/app/.glitchdotcom.json")) {
   // make sure we're installed once
   if (!fs.existsSync("/app/bin")) {
     child_process.execSync(`mkdir bin`);
