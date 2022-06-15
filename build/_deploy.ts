@@ -1,7 +1,7 @@
 // This is a simple generic deploy script in TypeScript that should work for most projects without modification
 // Every contract you want to deploy should have a mycontract.deploy.ts script that returns its init data
 // The script assumes that it is running from the repo root, and the directories are organized this way:
-//  ./build/ - directory for build artifacts (mycontract.cell) and deploy init data scripts (mycontract.deploy.ts)
+//  ./build/ - directory for build artifacts (mycontract.compiled.json) and deploy init data scripts (mycontract.deploy.ts)
 //  ./.env - config file with DEPLOYER_MNEMONIC - secret mnemonic of deploying wallet (will be created if not found)
 
 import axios from "axios";
@@ -84,12 +84,12 @@ async function main() {
     const initMessageCell = deployInitScript.initMessage() as Cell | null;
 
     // prepare the init code cell
-    const cellArtifact = `build/${contractName}.cell`;
-    if (!fs.existsSync(cellArtifact)) {
-      console.log(` - ERROR: '${cellArtifact}' not found, did you build?`);
+    const hexArtifact = `build/${contractName}.compiled.json`;
+    if (!fs.existsSync(hexArtifact)) {
+      console.log(` - ERROR: '${hexArtifact}' not found, did you build?`);
       process.exit(1);
     }
-    const initCodeCell = Cell.fromBoc(fs.readFileSync(cellArtifact))[0];
+    const initCodeCell = Cell.fromBoc(JSON.parse(fs.readFileSync(hexArtifact).toString()).hex)[0];
 
     // make sure the contract was not already deployed
     const newContractAddress = contractAddress({ workchain, initialData: initDataCell, initialCode: initCodeCell });
