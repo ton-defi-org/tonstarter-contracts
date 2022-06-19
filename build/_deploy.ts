@@ -22,15 +22,17 @@ async function main() {
   console.log(`=================================================================`);
   console.log(`Deploy script running, let's find some contracts to deploy..`);
 
+  const isTestnet = process.env.TESTNET || process.env.npm_lifecycle_event == "deploy:testnet";
+
   // check input arguments (given through environment variables)
-  if (process.env.TESTNET || process.env.npm_lifecycle_event == "deploy:testnet") {
+  if (isTestnet) {
     console.log(`\n* We are working with 'testnet' (https://t.me/testgiver_ton_bot will give you test TON)`);
   } else {
     console.log(`\n* We are working with 'mainnet'`);
   }
 
   // initialize globals
-  const client = new TonClient({ endpoint: `https://${process.env.TESTNET ? "testnet." : ""}toncenter.com/api/v2/jsonRPC` });
+  const client = new TonClient({ endpoint: `https://${isTestnet ? "testnet." : ""}toncenter.com/api/v2/jsonRPC` });
   const deployerWalletType = "org.ton.wallets.v3.r2"; // also see WalletV3R2Source class used below
   const newContractFunding = toNano(0.02); // this will be (almost in full) the balance of a new deployed contract and allow it to pay rent
   const workchain = 0; // normally 0, only special contracts should be deployed to masterchain (-1)
