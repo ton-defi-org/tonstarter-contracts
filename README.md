@@ -78,9 +78,8 @@ Alternatively, you can ignore the above requirements and develop right inside a 
   * In the root repo dir, run in terminal `npm run build`
   * Compilation errors will appear on screen
   * Resulting build artifacts include:
-    * `mycontract.merged.fc` - merged and flattened FunC source code with all imports
     * `mycontract.fif` - Fift file result of compilation (not very useful by itself)
-    * `mycontract.cell` - the binary code cell of the compiled contract (for deployment)
+    * `mycontract.compiled.json` - the binary code cell of the compiled contract (for deployment). Saved in a hex format within a json file to support webapp imports
 
 * Test
   * In the root repo dir, run in terminal `npm run test`

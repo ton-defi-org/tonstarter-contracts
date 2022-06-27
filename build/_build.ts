@@ -140,10 +140,8 @@ async function main() {
 
     // make sure cell build artifact was created
     if (!fs.existsSync(cellArtifact)) {
-      console.log(` - For some reason '${cellArtifact}' was not created!`);
+      console.log(` - For some reason, intermediary file '${cellArtifact}' was not created!`);
       process.exit(1);
-    } else {
-      console.log(` - Build artifact created '${cellArtifact}'`);
     }
 
     fs.writeFileSync(
