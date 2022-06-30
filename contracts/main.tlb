@@ -1,4 +1,4 @@
-// base types defined in https://github.com/newton-blockchain/ton/blob/master/crypto/block/block.tlb
+// base types defined in https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb
 
 // storage (according to save_data() contract method)
 
