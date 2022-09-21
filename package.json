@@ -43,7 +43,7 @@
     "timeout": 20000
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=16.15.0"
   },
   "dependencies": {
     "semver": "^7.3.7"
