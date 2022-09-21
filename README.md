@@ -34,7 +34,7 @@ Some of the opinionated choices made here include:
 
 To setup your local machine for development, please make sure you have the following:
 
-* A modern version of Node.js
+* A modern version of Node.js (version 16.15.0 or later)
   * Installation instructions can be found [here](https://nodejs.org/)
   * Run in terminal `node -v` to verify your installation, the project was tested on `v17.3.0`
 * The `func` CLI tool (FunC compiler)
