@@ -8,7 +8,7 @@ This project is part of a set of 3 typical repositories needed for a blockchain 
 
 * Smart contracts in FunC that are deployed on-chain (this repo)
 * Web frontend for interacting with the dapp from a web browser (coming soon)
-* Telegram bot for interacting with the dapp from inside Telegram messenger (coming soon)
+* Telegram bot for interacting with the [dapp from inside Telegram messenger](https://github.com/ton-defi-org/tonstarter-twa)
 
 ## What does this repo contain?
 
