@@ -95,3 +95,5 @@ Alternatively, you can ignore the above requirements and develop right inside a 
     * To deploy to testnet instead (where TON coins are free), run `npm run deploy:testnet`
     * Follow the on-screen instructions of the deploy script
   
+# License
+MIT
