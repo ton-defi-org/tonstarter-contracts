@@ -1,7 +1,8 @@
 import BN from "bn.js";
-import { Address, Cell, CellMessage, InternalMessage, CommonMessageInfo, WalletContract, SendMode, Wallet } from "ton";
+import { Address, Cell, internal, SendMode } from "ton-core";
 import { SmartContract } from "ton-contract-executor";
 import Prando from "prando";
+import { WalletContractV3R2, TonClient } from "ton";
 
 export const zeroAddress = new Address(0, Buffer.alloc(32, 0));
 
@@ -15,14 +16,13 @@ export function randomAddress(seed: string, workchain?: number) {
 }
 
 // used with ton-contract-executor (unit tests) to sendInternalMessage easily
-export function internalMessage(params: { from?: Address; to?: Address; value?: BN; bounce?: boolean; body?: Cell }) {
-  const message = params.body ? new CellMessage(params.body) : undefined;
-  return new InternalMessage({
+export function internalMessage(params: { from?: Address; to?: Address; value?: string; bounce?: boolean; body?: Cell }) {
+  return internal({
     from: params.from ?? randomAddress("sender"),
     to: params.to ?? zeroAddress,
-    value: params.value ?? 0,
+    value: params.value ?? "0",
     bounce: params.bounce ?? true,
-    body: new CommonMessageInfo({ body: message }),
+    body: params.body,
   });
 }
 
@@ -34,26 +34,25 @@ export function setBalance(contract: SmartContract, balance: BN) {
 }
 
 // helper for end-to-end on-chain tests (normally post deploy) to allow sending InternalMessages to contracts using a wallet
-export async function sendInternalMessageWithWallet(params: { walletContract: WalletContract; secretKey: Buffer; to: Address; value: BN; bounce?: boolean; body?: Cell }) {
-  const message = params.body ? new CellMessage(params.body) : undefined;
-  const seqno = await params.walletContract.getSeqNo();
-  const transfer = params.walletContract.createTransfer({
+export async function sendInternalMessageWithWallet(params: { wallet: any; client: TonClient; to: Address; value: bigint; bounce?: boolean; body?: Cell; secretKey: Buffer }) {
+  const seqno = await params.wallet.getSeqno();
+  const transfer = params.wallet.createTransfer({
     secretKey: params.secretKey,
     seqno: seqno,
     sendMode: SendMode.PAY_GAS_SEPARATLY + SendMode.IGNORE_ERRORS,
-    order: new InternalMessage({
-      to: params.to,
-      value: params.value,
-      bounce: params.bounce ?? false,
-      body: new CommonMessageInfo({
-        body: message,
+    messages: [
+      internal({
+        to: params.to,
+        value: params.value,
+        bounce: params.bounce ?? false,
+        body: params.body,
       }),
-    }),
+    ],
   });
-  await params.walletContract.client.sendExternalMessage(params.walletContract, transfer);
+  await params.client.sendExternalMessage(params.wallet, transfer);
   for (let attempt = 0; attempt < 10; attempt++) {
     await sleep(2000);
-    const seqnoAfter = await params.walletContract.getSeqNo();
+    const seqnoAfter = await params.wallet.getSeqno();
     if (seqnoAfter > seqno) return;
   }
 }

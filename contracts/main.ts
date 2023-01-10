@@ -1,5 +1,4 @@
-import BN from "bn.js";
-import { Cell, beginCell, Address } from "ton";
+import { Cell, beginCell, Address } from "ton-core";
 
 // encode contract storage according to save_data() contract method
 export function data(params: { ownerAddress: Address; counter: number }): Cell {
@@ -16,7 +15,7 @@ export function deposit(): Cell {
   return beginCell().storeUint(0x47d54391, 32).storeUint(0, 64).endCell();
 }
 
-export function withdraw(params: { withdrawAmount: BN }): Cell {
+export function withdraw(params: { withdrawAmount: bigint }): Cell {
   return beginCell().storeUint(0x41836980, 32).storeUint(0, 64).storeCoins(params.withdrawAmount).endCell();
 }
 

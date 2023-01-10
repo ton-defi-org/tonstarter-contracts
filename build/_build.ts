@@ -9,43 +9,13 @@
 import fs from "fs";
 import path from "path";
 import process from "process";
-import child_process from "child_process";
 import glob from "fast-glob";
-import { Cell } from "ton";
-import semver from "semver";
+import { Cell } from "ton-core";
+import { compileFunc } from "@ton-community/func-js";
 
 async function main() {
   console.log("=================================================================");
   console.log("Build script running, let's find some FunC contracts to compile..");
-
-  // if we have an explicit bin directory, use the executables there (needed for glitch.com)
-  if (fs.existsSync("bin")) {
-    process.env.PATH = path.join(__dirname, "..", "bin") + path.delimiter + process.env.PATH;
-    process.env.FIFTPATH = path.join(__dirname, "..", "bin", "fiftlib");
-  }
-
-  // make sure func compiler is available
-  const minSupportFunc = "0.2.0";
-  try {
-    const funcVersion = child_process
-      .execSync("func -V")
-      .toString()
-      .match(/semantic version: v([0-9.]+)/)?.[1];
-    if (!semver.gte(semver.coerce(funcVersion) ?? "", minSupportFunc)) throw new Error("Nonexistent version or outdated");
-  } catch (e) {
-    console.log(`\nFATAL ERROR: 'func' with version >= ${minSupportFunc} executable is not found, is it installed and in path?`);
-    process.exit(1);
-  }
-
-  // make sure fift cli is available
-  let fiftVersion = "";
-  try {
-    fiftVersion = child_process.execSync("fift -V").toString();
-  } catch (e) {}
-  if (!fiftVersion.includes("Fift build information")) {
-    console.log("\nFATAL ERROR: 'fift' executable is not found, is it installed and in path?");
-    process.exit(1);
-  }
 
   // go over all the root contracts in the contracts directory
   const rootContracts = glob.sync(["contracts/*.fc", "contracts/*.func"]);
@@ -54,27 +24,6 @@ async function main() {
     console.log(`\n* Found root contract '${rootContract}' - let's compile it:`);
     const contractName = path.parse(rootContract).name;
 
-    // delete existing build artifacts
-    const fiftArtifact = `build/${contractName}.fif`;
-    if (fs.existsSync(fiftArtifact)) {
-      console.log(` - Deleting old build artifact '${fiftArtifact}'`);
-      fs.unlinkSync(fiftArtifact);
-    }
-    const mergedFuncArtifact = `build/${contractName}.merged.fc`;
-    if (fs.existsSync(mergedFuncArtifact)) {
-      console.log(` - Deleting old build artifact '${mergedFuncArtifact}'`);
-      fs.unlinkSync(mergedFuncArtifact);
-    }
-    const fiftCellArtifact = `build/${contractName}.cell.fif`;
-    if (fs.existsSync(fiftCellArtifact)) {
-      console.log(` - Deleting old build artifact '${fiftCellArtifact}'`);
-      fs.unlinkSync(fiftCellArtifact);
-    }
-    const cellArtifact = `build/${contractName}.cell`;
-    if (fs.existsSync(cellArtifact)) {
-      console.log(` - Deleting old build artifact '${cellArtifact}'`);
-      fs.unlinkSync(cellArtifact);
-    }
     const hexArtifact = `build/${contractName}.compiled.json`;
     if (fs.existsSync(hexArtifact)) {
       console.log(` - Deleting old build artifact '${hexArtifact}'`);
@@ -99,60 +48,26 @@ async function main() {
 
     // run the func compiler to create a fif file
     console.log(` - Trying to compile '${rootContract}' with 'func' compiler..`);
-    let buildErrors: string;
-    try {
-      buildErrors = child_process.execSync(`func -APS -o build/${contractName}.fif ${rootContract} 2>&1 1>node_modules/.tmpfunc`).toString();
-    } catch (e) {
-      buildErrors = e.stdout.toString();
-    }
-    if (buildErrors.length > 0) {
+
+    const compileResult = await compileFunc({
+      targets: [rootContract],
+      sources: (x) => fs.readFileSync(x).toString("utf8"),
+    });
+
+    if (compileResult.status === "error") {
       console.log(" - OH NO! Compilation Errors! The compiler output was:");
-      console.log(`\n${buildErrors}`);
-      process.exit(1);
-    } else {
-      console.log(" - Compilation successful!");
-    }
-
-    // make sure fif build artifact was created
-    if (!fs.existsSync(fiftArtifact)) {
-      console.log(` - For some reason '${fiftArtifact}' was not created!`);
-      process.exit(1);
-    } else {
-      console.log(` - Build artifact created '${fiftArtifact}'`);
-    }
-
-    // create a temp cell.fif that will generate the cell
-    let fiftCellSource = '"Asm.fif" include\n';
-    fiftCellSource += `${fs.readFileSync(fiftArtifact).toString()}\n`;
-    fiftCellSource += `boc>B "${cellArtifact}" B>file`;
-    fs.writeFileSync(fiftCellArtifact, fiftCellSource);
-
-    // run fift cli to create the cell
-    try {
-      child_process.execSync(`fift ${fiftCellArtifact}`);
-    } catch (e) {
-      console.log("FATAL ERROR: 'fift' executable failed, is FIFTPATH env variable defined?");
+      console.log(`\n${compileResult.message}`);
       process.exit(1);
     }
 
-    // Remove intermediary
-    fs.unlinkSync(fiftCellArtifact);
-
-    // make sure cell build artifact was created
-    if (!fs.existsSync(cellArtifact)) {
-      console.log(` - For some reason, intermediary file '${cellArtifact}' was not created!`);
-      process.exit(1);
-    }
+    console.log(" - Compilation successful!");
 
     fs.writeFileSync(
       hexArtifact,
       JSON.stringify({
-        hex: Cell.fromBoc(fs.readFileSync(cellArtifact))[0].toBoc().toString("hex"),
+        hex: Cell.fromBoc(Buffer.from(compileResult.codeBoc, "base64"))[0].toBoc().toString("hex"),
       })
     );
-
-    // Remove intermediary
-    fs.unlinkSync(cellArtifact);
 
     // make sure hex artifact was created
     if (!fs.existsSync(hexArtifact)) {
