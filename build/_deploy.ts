@@ -139,7 +139,7 @@ async function main() {
       console.log(` - SUCCESS! Contract deployed successfully to address: ${newContractAddress.toString()}`);
       const contractBalance = await client.getBalance(newContractAddress);
       console.log(` - New contract balance is now ${fromNano(contractBalance)} TON, make sure it has enough to pay rent`);
-      await performPostDeploymentTest(rootContract, deployInitScript, wallet, client, newContractAddress);
+      await performPostDeploymentTest(rootContract, deployInitScript, wallet, client, newContractAddress, walletKey.secretKey);
     } else {
       console.log(` - FAILURE! Contract address still looks uninitialized: ${newContractAddress.toString()}`);
     }

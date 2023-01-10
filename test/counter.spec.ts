@@ -15,7 +15,7 @@ describe("Counter tests", () => {
 
   beforeEach(async () => {
     contract = await SmartContract.fromCell(
-      Cell.fromBoc(hex)[0], // code cell from build output
+      Cell.fromBoc(Buffer.from(hex, "hex"))[0], // code cell from build output
       main.data({
         ownerAddress: randomAddress("owner"),
         counter: 17,
