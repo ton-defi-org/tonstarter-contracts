@@ -1,12 +1,11 @@
 import chai, { expect } from "chai";
-import chaiBN from "chai-bn";
-import BN from "bn.js";
-chai.use(chaiBN(BN));
 
 import { Cell, Slice } from "ton";
 import { SmartContract } from "ton-contract-executor";
 import * as main from "../contracts/main";
 import { internalMessage, randomAddress } from "./helpers";
+
+import x from "@ton-community/tx-emulator"
 
 import { hex } from "../build/main.compiled.json";
 

@@ -43,6 +43,7 @@
     "node": ">=16.15.0"
   },
   "dependencies": {
-    "@orbs-network/ton-access": "^2.2.2"
+    "@orbs-network/ton-access": "^2.2.2",
+    "@ton-community/tx-emulator": "github:ton-community/tx-emulator#44475b3"
   }
 }
