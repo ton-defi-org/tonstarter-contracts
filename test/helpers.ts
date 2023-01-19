@@ -1,5 +1,5 @@
-import BN from "bn.js";
 import { Address, Cell, internal, SendMode } from "ton-core";
+import { Address as Address2 } from "ton-contract-executor/node_modules/ton-core";
 import { SmartContract } from "ton-contract-executor";
 import Prando from "prando";
 import { TonClient } from "ton";
@@ -17,19 +17,22 @@ export function randomAddress(seed: string, workchain?: number) {
 
 // used with ton-contract-executor (unit tests) to sendInternalMessage easily
 export function internalMessage(params: { from?: Address; to?: Address; value?: string; bounce?: boolean; body?: Cell }) {
-  return internal({
-    // from: params.from ?? randomAddress("sender"),
+  const msg = internal({
     to: params.to ?? zeroAddress,
     value: params.value ?? "0",
     bounce: params.bounce ?? true,
     body: params.body,
   });
+
+  msg.info.src = params.from ?? randomAddress("sender");
+
+  return msg;
 }
 
 // temp fix until ton-contract-executor (unit tests) remembers c7 value between calls
 export function setBalance(contract: SmartContract, balance: bigint) {
   contract.setC7Config({
-    balance: new BN(balance.toString()),
+    balance: balance,
   });
 }
 

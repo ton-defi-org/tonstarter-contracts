@@ -1,7 +1,7 @@
 import chai, { expect } from "chai";
-import chaiBN from "chai-bn";
-import BN from "bn.js";
-chai.use(chaiBN(BN));
+// import chaiBN from "chai-bn";
+// import BN from "bn.js";
+// chai.use(chaiBN(BN));
 
 import { Cell } from "ton";
 import { SmartContract } from "ton-contract-executor";
@@ -25,12 +25,12 @@ describe("Counter tests", () => {
 
   it("should get the meaning of life", async () => {
     const call = await contract.invokeGetMethod("meaning_of_life", []);
-    expect(call.result[0]).to.be.bignumber.equal(new BN(42));
+    expect(call.result[0]).to.be.equal(42n);
   });
 
   it("should get counter value and increment it", async () => {
     const call = await contract.invokeGetMethod("counter", []);
-    expect(call.result[0]).to.be.bignumber.equal(new BN(17));
+    expect(call.result[0]).to.be.equal(17n);
 
     const send = await contract.sendInternalMessage(
       internalMessage({
@@ -41,6 +41,6 @@ describe("Counter tests", () => {
     expect(send.type).to.equal("success");
 
     const call2 = await contract.invokeGetMethod("counter", []);
-    expect(call2.result[0]).to.be.bignumber.equal(new BN(18));
+    expect(call2.result[0]).to.equal(18n);
   });
 });

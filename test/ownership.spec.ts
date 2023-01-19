@@ -5,8 +5,6 @@ import { SmartContract } from "ton-contract-executor";
 import * as main from "../contracts/main";
 import { internalMessage, randomAddress } from "./helpers";
 
-import x from "@ton-community/tx-emulator"
-
 import { hex } from "../build/main.compiled.json";
 
 describe("Transfer ownership tests", () => {
@@ -32,7 +30,7 @@ describe("Transfer ownership tests", () => {
     expect(send.type).to.equal("success");
 
     const call = await contract.invokeGetMethod("owner_address", []);
-    const address = (call.result[0] as Slice).readAddress();
+    const address = (call.result[0] as Slice).loadAddress();
     expect(address?.equals(randomAddress("newowner"))).to.equal(true);
   });
 
@@ -47,7 +45,7 @@ describe("Transfer ownership tests", () => {
     expect(send.exit_code).to.equal(102); // access_denied in contracts/imports/constants.fc
 
     const call = await contract.invokeGetMethod("owner_address", []);
-    const address = (call.result[0] as Slice).readAddress();
+    const address = (call.result[0] as Slice).loadAddress();
     expect(address?.equals(randomAddress("owner"))).to.equal(true);
   });
 });
