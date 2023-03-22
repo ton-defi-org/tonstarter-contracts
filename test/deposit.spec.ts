@@ -1,7 +1,7 @@
 import chai, { expect } from "chai";
-import chaiBN from "chai-bn";
-import BN from "bn.js";
-chai.use(chaiBN(BN));
+// import chaiBN from "chai-bn";
+// import BN from "bn.js";
+// chai.use(chaiBN(BN));
 
 import { Cell, toNano } from "ton";
 import { SmartContract } from "ton-contract-executor";
@@ -15,7 +15,7 @@ describe("Deposit and withdraw tests", () => {
 
   beforeEach(async () => {
     contract = await SmartContract.fromCell(
-      Cell.fromBoc(hex)[0], // code cell from build output
+      Cell.fromBoc(Buffer.from(hex, "hex"))[0], // code cell from build output
       main.data({
         ownerAddress: randomAddress("owner"),
         counter: 17,
@@ -24,32 +24,32 @@ describe("Deposit and withdraw tests", () => {
   });
 
   it("should get balance", async () => {
-    setBalance(contract, toNano(37));
+    setBalance(contract, toNano('37'));
     const call = await contract.invokeGetMethod("balance", []);
-    expect(call.result[0]).to.be.bignumber.equal(toNano(37));
+    expect(call.result[0]).to.be.equal(toNano('37'));
   });
 
   it("should allow the owner to withdraw when balance is high", async () => {
-    setBalance(contract, toNano(37));
+    setBalance(contract, toNano('37'));
     const send = await contract.sendInternalMessage(
       internalMessage({
         from: randomAddress("owner"),
-        body: main.withdraw({ withdrawAmount: toNano(20) }),
+        body: main.withdraw({ withdrawAmount: toNano('20') }),
       })
     );
     expect(send.type).to.equal("success");
     expect(send.actionList).to.have.lengthOf(1);
     const resultMessage = (send.actionList[0] as any)?.message?.info;
     expect(resultMessage?.dest?.equals(randomAddress("owner"))).to.equal(true);
-    expect(resultMessage?.value?.coins).to.be.bignumber.equal(toNano(20));
+    expect(resultMessage?.value?.coins).to.be.equal(toNano('20'));
   });
 
   it("should prevent others from withdrawing when balance is high", async () => {
-    setBalance(contract, toNano(37));
+    setBalance(contract, toNano('37'));
     const send = await contract.sendInternalMessage(
       internalMessage({
         from: randomAddress("notowner"),
-        body: main.withdraw({ withdrawAmount: toNano(20) }),
+        body: main.withdraw({ withdrawAmount: toNano('20') }),
       })
     );
     expect(send.type).to.equal("failed");
@@ -57,11 +57,11 @@ describe("Deposit and withdraw tests", () => {
   });
 
   it("should prevent the owner to withdraw when balance is low", async () => {
-    setBalance(contract, toNano(10));
+    setBalance(contract, toNano('10'));
     const send = await contract.sendInternalMessage(
       internalMessage({
         from: randomAddress("owner"),
-        body: main.withdraw({ withdrawAmount: toNano(20) }),
+        body: main.withdraw({ withdrawAmount: toNano('20') }),
       })
     );
     expect(send.type).to.equal("failed");
@@ -69,17 +69,17 @@ describe("Deposit and withdraw tests", () => {
   });
 
   it("should leave enough balance for rent", async () => {
-    setBalance(contract, toNano(20));
+    setBalance(contract, toNano('20'));
     const send = await contract.sendInternalMessage(
       internalMessage({
         from: randomAddress("owner"),
-        body: main.withdraw({ withdrawAmount: toNano(20) }),
+        body: main.withdraw({ withdrawAmount: toNano('20') }),
       })
     );
     expect(send.type).to.equal("success");
     expect(send.actionList).to.have.lengthOf(1);
     const resultMessage = (send.actionList[0] as any)?.message?.info;
     expect(resultMessage?.dest?.equals(randomAddress("owner"))).to.equal(true);
-    expect(resultMessage?.value?.coins).to.be.bignumber.equal(toNano(20).sub(toNano(0.01))); // min_tons_for_storage in contracts/imports/constants.fc
+    expect(resultMessage?.value?.coins).to.be.equal(toNano('20') - (toNano('0.01'))); // min_tons_for_storage in contracts/imports/constants.fc
   });
 });

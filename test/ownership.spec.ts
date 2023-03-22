@@ -1,7 +1,4 @@
 import chai, { expect } from "chai";
-import chaiBN from "chai-bn";
-import BN from "bn.js";
-chai.use(chaiBN(BN));
 
 import { Cell, Slice } from "ton";
 import { SmartContract } from "ton-contract-executor";
@@ -15,7 +12,7 @@ describe("Transfer ownership tests", () => {
 
   beforeEach(async () => {
     contract = await SmartContract.fromCell(
-      Cell.fromBoc(hex)[0], // code cell from build output
+      Cell.fromBoc(Buffer.from(hex, "hex"))[0], // code cell from build output
       main.data({
         ownerAddress: randomAddress("owner"),
         counter: 17,
@@ -33,7 +30,7 @@ describe("Transfer ownership tests", () => {
     expect(send.type).to.equal("success");
 
     const call = await contract.invokeGetMethod("owner_address", []);
-    const address = (call.result[0] as Slice).readAddress();
+    const address = (call.result[0] as Slice).loadAddress();
     expect(address?.equals(randomAddress("newowner"))).to.equal(true);
   });
 
@@ -48,7 +45,7 @@ describe("Transfer ownership tests", () => {
     expect(send.exit_code).to.equal(102); // access_denied in contracts/imports/constants.fc
 
     const call = await contract.invokeGetMethod("owner_address", []);
-    const address = (call.result[0] as Slice).readAddress();
+    const address = (call.result[0] as Slice).loadAddress();
     expect(address?.equals(randomAddress("owner"))).to.equal(true);
   });
 });

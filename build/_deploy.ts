@@ -4,9 +4,7 @@
 //  ./build/ - directory for build artifacts (mycontract.compiled.json) and deploy init data scripts (mycontract.deploy.ts)
 //  ./.env - config file with DEPLOYER_MNEMONIC - secret mnemonic of deploying wallet (will be created if not found)
 
-import axios from "axios";
-import axiosThrottle from "axios-request-throttle";
-axiosThrottle.use(axios, { requestsPerSecond: 0.5 }); // required since toncenter jsonRPC limits to 1 req/sec without API key
+import { getHttpEndpoint } from "@orbs-network/ton-access";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -14,8 +12,8 @@ dotenv.config();
 import fs from "fs";
 import path from "path";
 import glob from "fast-glob";
-import { Address, Cell, CellMessage, CommonMessageInfo, fromNano, InternalMessage, StateInit, toNano } from "ton";
-import { TonClient, WalletContract, WalletV3R2Source, contractAddress, SendMode } from "ton";
+import { Address, Cell, fromNano, toNano, contractAddress, internal } from "ton-core";
+import { TonClient, SendMode, WalletContractV3R2 } from "ton";
 import { mnemonicNew, mnemonicToWalletKey } from "ton-crypto";
 
 async function main() {
@@ -32,9 +30,10 @@ async function main() {
   }
 
   // initialize globals
-  const client = new TonClient({ endpoint: `https://${isTestnet ? "testnet." : ""}toncenter.com/api/v2/jsonRPC` });
+  const endpoint = await getHttpEndpoint({ network: isTestnet ? "testnet" : "mainnet" });
+  const client = new TonClient({ endpoint });
   const deployerWalletType = "org.ton.wallets.v3.r2"; // also see WalletV3R2Source class used below
-  const newContractFunding = toNano(0.02); // this will be (almost in full) the balance of a new deployed contract and allow it to pay rent
+  const newContractFunding = toNano("0.02"); // this will be (almost in full) the balance of a new deployed contract and allow it to pay rent
   const workchain = 0; // normally 0, only special contracts should be deployed to masterchain (-1)
 
   // make sure we have a wallet mnemonic to deploy from (or create one if not found)
@@ -53,10 +52,16 @@ async function main() {
 
   // open the wallet and make sure it has enough TON
   const walletKey = await mnemonicToWalletKey(deployerMnemonic.split(" "));
-  const walletContract = WalletContract.create(client, WalletV3R2Source.create({ publicKey: walletKey.publicKey, workchain }));
-  console.log(` - Wallet address used to deploy from is: ${walletContract.address.toFriendly()}`);
-  const walletBalance = await client.getBalance(walletContract.address);
-  if (walletBalance.lt(toNano(0.2))) {
+  const wallet = client.open(
+    WalletContractV3R2.create({
+      publicKey: walletKey.publicKey,
+      workchain: 0,
+    })
+  );
+
+  console.log(` - Wallet address used to deploy from is: ${wallet.address.toString()}`);
+  const walletBalance = await client.getBalance(wallet.address);
+  if (walletBalance < toNano("0.2")) {
     console.log(` - ERROR: Wallet has less than 0.2 TON for gas (${fromNano(walletBalance)} TON), please send some TON for gas first`);
     process.exit(1);
   } else {
@@ -91,52 +96,52 @@ async function main() {
       console.log(` - ERROR: '${hexArtifact}' not found, did you build?`);
       process.exit(1);
     }
-    const initCodeCell = Cell.fromBoc(JSON.parse(fs.readFileSync(hexArtifact).toString()).hex)[0];
+    const initCodeCell = Cell.fromBoc(Buffer.from(JSON.parse(fs.readFileSync(hexArtifact).toString()).hex, "hex"))[0];
 
     // make sure the contract was not already deployed
-    const newContractAddress = contractAddress({ workchain, initialData: initDataCell, initialCode: initCodeCell });
-    console.log(` - Based on your init code+data, your new contract address is: ${newContractAddress.toFriendly()}`);
+    const newContractAddress = contractAddress(0, { code: initCodeCell, data: initDataCell });
+    console.log(` - Based on your init code+data, your new contract address is: ${newContractAddress.toString()}`);
     if (await client.isContractDeployed(newContractAddress)) {
       console.log(` - Looks like the contract is already deployed in this address, skipping deployment`);
-      await performPostDeploymentTest(rootContract, deployInitScript, walletContract, walletKey.secretKey, newContractAddress);
+      await performPostDeploymentTest(rootContract, deployInitScript, wallet, client, newContractAddress, walletKey.secretKey);
       continue;
     }
 
     // deploy by sending an internal message to the deploying wallet
     console.log(` - Let's deploy the contract on-chain..`);
-    const seqno = await walletContract.getSeqNo();
-    const transfer = walletContract.createTransfer({
+    const seqno = await wallet.getSeqno();
+    const transfer = wallet.createTransfer({
       secretKey: walletKey.secretKey,
       seqno: seqno,
       sendMode: SendMode.PAY_GAS_SEPARATLY + SendMode.IGNORE_ERRORS,
-      order: new InternalMessage({
-        to: newContractAddress,
-        value: newContractFunding,
-        bounce: false,
-        body: new CommonMessageInfo({
-          stateInit: new StateInit({ data: initDataCell, code: initCodeCell }),
-          body: initMessageCell !== null ? new CellMessage(initMessageCell) : null,
+      messages: [
+        internal({
+          to: newContractAddress,
+          value: newContractFunding,
+          bounce: false,
+          init: { data: initDataCell, code: initCodeCell },
+          body: initMessageCell,
         }),
-      }),
+      ],
     });
-    await client.sendExternalMessage(walletContract, transfer);
+    await client.sendExternalMessage(wallet, transfer);
     console.log(` - Deploy transaction sent successfully`);
 
     // make sure that the contract was deployed
-    console.log(` - Block explorer link: https://${process.env.TESTNET ? "test." : ""}tonwhales.com/explorer/address/${newContractAddress.toFriendly()}`);
+    console.log(` - Block explorer link: https://${process.env.TESTNET ? "testnet." : ""}tonscan.org/address/${newContractAddress.toString()}`);
     console.log(` - Waiting up to 20 seconds to check if the contract was actually deployed..`);
     for (let attempt = 0; attempt < 10; attempt++) {
       await sleep(2000);
-      const seqnoAfter = await walletContract.getSeqNo();
+      const seqnoAfter = await wallet.getSeqno();
       if (seqnoAfter > seqno) break;
     }
     if (await client.isContractDeployed(newContractAddress)) {
-      console.log(` - SUCCESS! Contract deployed successfully to address: ${newContractAddress.toFriendly()}`);
+      console.log(` - SUCCESS! Contract deployed successfully to address: ${newContractAddress.toString()}`);
       const contractBalance = await client.getBalance(newContractAddress);
       console.log(` - New contract balance is now ${fromNano(contractBalance)} TON, make sure it has enough to pay rent`);
-      await performPostDeploymentTest(rootContract, deployInitScript, walletContract, walletKey.secretKey, newContractAddress);
+      await performPostDeploymentTest(rootContract, deployInitScript, wallet, client, newContractAddress, walletKey.secretKey);
     } else {
-      console.log(` - FAILURE! Contract address still looks uninitialized: ${newContractAddress.toFriendly()}`);
+      console.log(` - FAILURE! Contract address still looks uninitialized: ${newContractAddress.toString()}`);
     }
   }
 
@@ -151,11 +156,11 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function performPostDeploymentTest(rootContract: string, deployInitScript: any, walletContract: WalletContract, secretKey: Buffer, newContractAddress: Address) {
+async function performPostDeploymentTest(rootContract: string, deployInitScript: any, wallet: any, client: TonClient, newContractAddress: Address, secretKey: Buffer) {
   if (typeof deployInitScript.postDeployTest !== "function") {
     console.log(` - Not running a post deployment test, '${rootContract}' does not have 'postDeployTest()' function`);
     return;
   }
   console.log(` - Running a post deployment test:`);
-  await deployInitScript.postDeployTest(walletContract, secretKey, newContractAddress);
+  await deployInitScript.postDeployTest(wallet, client, newContractAddress, secretKey);
 }
